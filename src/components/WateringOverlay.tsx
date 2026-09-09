@@ -6,8 +6,8 @@ interface WateringOverlayProps {
   reducedMotion: boolean;
 }
 
-const SPOUT_TIP = { x: 246, y: 95 };
-const SOIL_TARGET = { x: 210, y: 410 };
+const SPOUT_TIP = { x: 246, y: 100 };
+const SOIL_TARGET = { x: 205, y: 365 };
 
 export function WateringOverlay({ pulse, reducedMotion }: WateringOverlayProps) {
   if (pulse === 0) return null;
@@ -17,7 +17,7 @@ export function WateringOverlay({ pulse, reducedMotion }: WateringOverlayProps) 
   return (
     <svg
       key={pulse}
-      viewBox="0 0 400 450"
+      viewBox="0 0 400 630"
       className="watering-overlay"
       aria-hidden="true"
       focusable="false"
@@ -32,7 +32,7 @@ export function WateringOverlay({ pulse, reducedMotion }: WateringOverlayProps) 
         transition={{ duration, times: [0, 0.28, 0.72, 1], ease: "easeInOut" }}
         style={{ transformOrigin: `${SPOUT_TIP.x}px ${SPOUT_TIP.y}px` }}
       >
-        <g transform="translate(216, 37)">
+        <g transform="translate(216, 42)">
           <rect x="0" y="18" width="58" height="40" rx="12" fill="var(--can-body)" />
           <rect x="8" y="4" width="24" height="18" rx="6" fill="var(--can-body)" />
           <path

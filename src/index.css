@@ -42,6 +42,15 @@
   --can-handle: #a8542c;
   --droplet-color: #8fd0e8;
 
+  --vase-light: #ffffff;
+  --vase-mid: #f1efe9;
+  --vase-dark: #dcd8ce;
+  --vase-shade: #c7c2b5;
+  --vase-highlight: #ffffff;
+  --vase-speckle: #b9b3a3;
+  --vase-opening: #ded9cd;
+  --vase-contact-shadow: #6b6355;
+
   --room-fallback: #ece4d6;
 
   --focus-ring: #2f6f4f;

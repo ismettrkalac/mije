@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { motion, useAnimationControls } from "motion/react";
+import { Vase } from "./Vase";
 import { Leaf } from "./Leaf";
 import { Bud } from "./Bud";
 import { Flower } from "./Flower";
@@ -25,8 +26,8 @@ export interface PlantProps {
 }
 
 const CX = 200;
-/** The vase's rim line — where the stem appears to emerge from the real photographed vase. */
-const BASE_Y = 430;
+/** The vase's rim line — where the stem appears to emerge from the illustrated vase. */
+const BASE_Y = 355;
 const MAX_STEM_HEIGHT = 300;
 const CURVE_AMOUNT = 22;
 
@@ -107,16 +108,25 @@ export function Plant({
 
   return (
     <svg
-      viewBox="0 0 400 450"
+      viewBox="0 0 400 630"
       className="plant-illustration"
       role="img"
       aria-label={
         isBloomed
-          ? "A fully bloomed pink lily rising from the vase"
-          : "A lily seedling growing from the vase"
+          ? "A fully bloomed pink lily rising from a white vase"
+          : "A lily seedling growing from a white vase"
       }
     >
       <defs>
+        <linearGradient id="vaseGradient" x1="0" y1="0" x2="1" y2="0.15">
+          <stop offset="0%" stopColor="var(--vase-mid)" />
+          <stop offset="45%" stopColor="var(--vase-light)" />
+          <stop offset="100%" stopColor="var(--vase-dark)" />
+        </linearGradient>
+        <linearGradient id="vaseRimGradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--vase-light)" />
+          <stop offset="100%" stopColor="var(--vase-shade)" />
+        </linearGradient>
         <linearGradient id="leafGradient" x1="0" y1="1" x2="0" y2="0">
           <stop offset="0%" stopColor="var(--leaf-dark)" />
           <stop offset="55%" stopColor="var(--leaf-mid)" />
@@ -163,6 +173,8 @@ export function Plant({
             : undefined
         }
       >
+        <Vase rimY={BASE_Y} />
+
         {growth > 0 && (
           <path
             d={stemPath}
