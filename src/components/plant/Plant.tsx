@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from "react";
 import { motion, useAnimationControls } from "motion/react";
-import { Pot } from "./Pot";
 import { Leaf } from "./Leaf";
 import { Bud } from "./Bud";
 import { Flower } from "./Flower";
@@ -26,7 +25,8 @@ export interface PlantProps {
 }
 
 const CX = 200;
-const SOIL_Y = 430;
+/** The vase's rim line — where the stem appears to emerge from the real photographed vase. */
+const BASE_Y = 430;
 const MAX_STEM_HEIGHT = 300;
 const CURVE_AMOUNT = 22;
 
@@ -48,7 +48,7 @@ const LEAF_SLOTS: LeafSlot[] = [
 
 function stemHeightForGrowth(growth: number): number {
   if (growth <= 0.15) {
-    return 8 + easeInOut(localProgress(growth, 0, 0.15)) * 42;
+    return 18 + easeInOut(localProgress(growth, 0, 0.15)) * 32;
   }
   if (growth <= 0.75) {
     return 50 + easeInOut(localProgress(growth, 0.15, 0.75)) * (MAX_STEM_HEIGHT * 0.92 - 50);
@@ -72,10 +72,10 @@ export function Plant({
 
   const stemHeight = useMemo(() => stemHeightForGrowth(growth), [growth]);
 
-  const p0: Point = { x: CX, y: SOIL_Y };
-  const p1: Point = { x: CX + CURVE_AMOUNT, y: SOIL_Y - stemHeight * 0.35 };
-  const p2: Point = { x: CX - CURVE_AMOUNT * 0.7, y: SOIL_Y - stemHeight * 0.7 };
-  const p3: Point = { x: CX + CURVE_AMOUNT * 0.25, y: SOIL_Y - stemHeight };
+  const p0: Point = { x: CX, y: BASE_Y };
+  const p1: Point = { x: CX + CURVE_AMOUNT, y: BASE_Y - stemHeight * 0.35 };
+  const p2: Point = { x: CX - CURVE_AMOUNT * 0.7, y: BASE_Y - stemHeight * 0.7 };
+  const p3: Point = { x: CX + CURVE_AMOUNT * 0.25, y: BASE_Y - stemHeight };
 
   const stemPath = `M${p0.x},${p0.y} C${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`;
   const tipAngle = cubicBezierTangentAngle(p0, p1, p2, p3, 1);
@@ -107,51 +107,47 @@ export function Plant({
 
   return (
     <svg
-      viewBox="0 0 400 620"
+      viewBox="0 0 400 450"
       className="plant-illustration"
       role="img"
       aria-label={
         isBloomed
-          ? "A fully bloomed pink lily in a terracotta pot"
-          : "A lily seedling growing in a terracotta pot"
+          ? "A fully bloomed pink lily rising from the vase"
+          : "A lily seedling growing from the vase"
       }
     >
       <defs>
-        <linearGradient id="potGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--pot-light)" />
-          <stop offset="100%" stopColor="var(--pot-dark)" />
-        </linearGradient>
-        <linearGradient id="rimGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--pot-rim-light)" />
-          <stop offset="100%" stopColor="var(--pot-shade)" />
-        </linearGradient>
-        <radialGradient id="soilGradient" cx="50%" cy="30%" r="80%">
-          <stop offset="0%" stopColor="var(--soil-light)" />
-          <stop offset="100%" stopColor="var(--soil-dark)" />
-        </radialGradient>
         <linearGradient id="leafGradient" x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0%" stopColor="var(--leaf-base)" />
+          <stop offset="0%" stopColor="var(--leaf-dark)" />
+          <stop offset="55%" stopColor="var(--leaf-mid)" />
           <stop offset="100%" stopColor="var(--leaf-tip)" />
         </linearGradient>
         <linearGradient id="stemGradient" x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0%" stopColor="var(--stem-base)" />
+          <stop offset="0%" stopColor="var(--stem-shade)" />
+          <stop offset="55%" stopColor="var(--stem-base)" />
           <stop offset="100%" stopColor="var(--stem-tip)" />
         </linearGradient>
-        <radialGradient id="petalGradientOuter" cx="50%" cy="90%" r="100%">
-          <stop offset="0%" stopColor="var(--petal-center)" />
-          <stop offset="100%" stopColor="var(--petal-outer)" />
+        <linearGradient id="budGradient" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stopColor="var(--bud-shade)" />
+          <stop offset="60%" stopColor="var(--bud-green)" />
+          <stop offset="100%" stopColor="var(--bud-highlight)" />
+        </linearGradient>
+        <radialGradient id="petalGradientOuter" cx="50%" cy="96%" r="110%">
+          <stop offset="0%" stopColor="var(--petal-deep)" />
+          <stop offset="30%" stopColor="var(--petal-outer)" />
+          <stop offset="70%" stopColor="var(--petal-mid)" />
+          <stop offset="100%" stopColor="var(--petal-center)" />
         </radialGradient>
-        <radialGradient id="petalGradientInner" cx="50%" cy="95%" r="100%">
-          <stop offset="0%" stopColor="var(--petal-inner-center)" />
-          <stop offset="100%" stopColor="var(--petal-inner-outer)" />
+        <radialGradient id="petalGradientInner" cx="50%" cy="97%" r="110%">
+          <stop offset="0%" stopColor="var(--petal-shade)" />
+          <stop offset="45%" stopColor="var(--petal-inner-outer)" />
+          <stop offset="100%" stopColor="var(--petal-inner-center)" />
         </radialGradient>
       </defs>
 
-      <ellipse cx={CX} cy={SOIL_Y + 96} rx={150} ry={22} fill="var(--ground-shadow)" opacity={0.18} />
-
       <motion.g
         animate={controls}
-        style={{ transformOrigin: `${CX}px ${SOIL_Y}px`, cursor: onTap ? "pointer" : undefined }}
+        style={{ transformOrigin: `${CX}px ${BASE_Y}px`, cursor: onTap ? "pointer" : undefined }}
         onClick={onTap}
         tabIndex={onTap ? 0 : undefined}
         role={onTap ? "button" : undefined}
@@ -167,8 +163,6 @@ export function Plant({
             : undefined
         }
       >
-        <Pot soilY={SOIL_Y} />
-
         {growth > 0 && (
           <path
             d={stemPath}

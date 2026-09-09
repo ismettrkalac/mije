@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { AnimatePresence } from "motion/react";
 import { gardenConfig } from "./config";
 import { useGrowth } from "./hooks/useGrowth";
-import { useTimeOfDay } from "./hooks/useTimeOfDay";
 import { usePrefersReducedMotion } from "./hooks/usePrefersReducedMotion";
 import { useWatering } from "./hooks/useWatering";
 import { Background } from "./components/Background";
@@ -20,7 +19,6 @@ export default function App() {
   const isPreview = previewDate !== null;
 
   const growthState = useGrowth(previewDate);
-  const timeOfDay = useTimeOfDay();
   const reducedMotion = usePrefersReducedMotion();
   const watering = useWatering(growthState.todayStr);
 
@@ -53,8 +51,8 @@ export default function App() {
   };
 
   return (
-    <div className="app-root" data-time={timeOfDay}>
-      <Background timeOfDay={timeOfDay} reducedMotion={reducedMotion} />
+    <div className="app-root">
+      <Background />
 
       <main className="garden-content">
         <header className="garden-header">
@@ -75,19 +73,21 @@ export default function App() {
           <WateringOverlay pulse={waterPulse} reducedMotion={reducedMotion} />
         </div>
 
-        {growthState.isBloomed && (
-          <button type="button" className="open-letter-button" onClick={() => setShowLetter(true)}>
-            Open your letter
-          </button>
-        )}
+        <div className="garden-footer">
+          {growthState.isBloomed && (
+            <button type="button" className="open-letter-button" onClick={() => setShowLetter(true)}>
+              Open your letter
+            </button>
+          )}
 
-        <CountdownBadge daysUntilBloom={growthState.daysUntilBloom} isBloomed={growthState.isBloomed} />
+          <CountdownBadge daysUntilBloom={growthState.daysUntilBloom} isBloomed={growthState.isBloomed} />
 
-        <WaterButton
-          wateredToday={!isPreview && watering.wateredToday}
-          reducedMotion={reducedMotion}
-          onWater={handleWater}
-        />
+          <WaterButton
+            wateredToday={!isPreview && watering.wateredToday}
+            reducedMotion={reducedMotion}
+            onWater={handleWater}
+          />
+        </div>
       </main>
 
       <AnimatePresence>

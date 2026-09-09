@@ -25,7 +25,7 @@ export interface GardenConfig {
 }
 
 export const gardenConfig: GardenConfig = {
-  startDate: "2026-09-09",
+  startDate: "2026-05-11",
   bloomDate: "2027-05-11",
   timezone: "Europe/Belgrade",
   recipientName: "my love",

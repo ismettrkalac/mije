@@ -7,75 +7,44 @@
   --ink: #3d2f22;
   --ink-soft: #6b5a48;
 
-  --soil-dark: #4a3428;
-  --soil-light: #6b4a35;
-  --soil-fleck: #2f2119;
+  --leaf-dark: #35502e;
+  --leaf-base: #46653a;
+  --leaf-mid: #5c7d49;
+  --leaf-tip: #7c9a5e;
+  --leaf-highlight: #a6bd82;
+  --leaf-shade: #26391f;
 
-  --pot-light: #d97b4f;
-  --pot-dark: #a3502f;
-  --pot-rim-light: #e08f61;
-  --pot-shade: #82401f;
+  --stem-base: #4c6b3c;
+  --stem-mid: #5f7e46;
+  --stem-tip: #7c9a5e;
+  --stem-shade: #3a5230;
 
-  --leaf-base: #4c7a4a;
-  --leaf-tip: #86b464;
-  --leaf-edge: #375c39;
-  --leaf-vein: #2f4f31;
+  --bud-green: #6f8f52;
+  --bud-pink: #d69bab;
+  --bud-shade: #3f5a34;
+  --bud-highlight: #9ab077;
 
-  --stem-base: #5a8a4f;
-  --stem-tip: #86b464;
+  --petal-center: #fbeeee;
+  --petal-mid: #e3a3b3;
+  --petal-outer: #c76b85;
+  --petal-deep: #a84b68;
+  --petal-inner-center: #fdf5f0;
+  --petal-inner-outer: #e4aeb8;
+  --petal-shade: #9c5068;
+  --petal-vein: #c17c8f;
+  --petal-speckle: #8a3752;
 
-  --bud-green: #7fae5e;
-  --bud-pink: #e8a3b8;
-  --bud-edge: #4f7a44;
-
-  --petal-center: #fdeef1;
-  --petal-outer: #e8799e;
-  --petal-inner-center: #fff5f7;
-  --petal-inner-outer: #f2a5be;
-  --petal-edge: #d9557d;
-  --petal-vein: #c65f83;
-
-  --stamen-filament: #d98a3d;
-  --stamen-anther: #b8651f;
-  --flower-throat: #f7c8d4;
-
-  --ground-shadow: #2a1c12;
-  --shadow-color: #2a1c12;
+  --stamen-filament: #c98a4f;
+  --stamen-anther: #93502a;
+  --flower-throat: #e8a8ab;
 
   --can-body: #c96b3f;
   --can-handle: #a8542c;
   --droplet-color: #8fd0e8;
 
-  --butterfly-body: #3a2a20;
-  --butterfly-a: #f2a5be;
-  --butterfly-b: #f7d774;
-
-  --cloud-color: #ffffff;
-  --moon-color: #eef2ff;
-
-  --sky-top: #bfe3f5;
-  --sky-mid: #e8f3e0;
-  --ground-color: #cfe4bd;
-  --sun-color: #ffd873;
-  --sun-glow: rgba(255, 216, 115, 0.55);
+  --room-fallback: #ece4d6;
 
   --focus-ring: #2f6f4f;
-}
-
-[data-time="evening"] {
-  --sky-top: #6a5488;
-  --sky-mid: #e08a63;
-  --ground-color: #b98a63;
-  --sun-color: #ff9d5c;
-  --sun-glow: rgba(255, 157, 92, 0.5);
-}
-
-[data-time="night"] {
-  --sky-top: #0b1330;
-  --sky-mid: #1f2b52;
-  --ground-color: #2a3a2e;
-  --ink: #f3ecdd;
-  --ink-soft: #cfc4ae;
 }
 
 * {
