@@ -98,17 +98,17 @@ A separate, optional piece: `/api/monthaversary.ts` is a Vercel serverless funct
 - Each recipient gets their own email, addressed by name.
 - The relationship start date is `src/config.ts` → `startDate` (already source-controlled, not secret). Recipient email addresses live server-side only, in an env var — never in the frontend bundle.
 
-### How the schedule works (and why it needs periodic checks, not a fixed-time cron)
+### How the schedule works (and why it needs a periodic check, not a fixed-time cron)
 
-Vercel Cron schedules are UTC-only and (on most plans) can't run more than once a day, but 09:00 in Europe/Belgrade shifts between UTC+1 (CET) and UTC+2 (CEST) across the year. So instead of trying to express "09:00 Belgrade" as a single UTC cron time, `vercel.json` schedules the function **hourly**, in UTC:
+Vercel Cron schedules are UTC-only, and Hobby-plan projects are limited to **one cron invocation per day** (a more frequent expression fails at deployment — this is why the first deploy attempt here failed until the schedule below was in place). But 09:00 in Europe/Belgrade shifts between UTC+1 (CET) and UTC+2 (CEST) across the year, so a single fixed UTC time can't land on 09:00 local in both seasons. `vercel.json` schedules the function once daily, at **08:00 UTC**:
 
 ```json
-{ "crons": [{ "path": "/api/monthaversary", "schedule": "0 * * * *" }] }
+{ "crons": [{ "path": "/api/monthaversary", "schedule": "0 8 * * *" }] }
 ```
 
-Every hour, the function resolves the current time in `Europe/Belgrade` (via `Intl.DateTimeFormat`, which already accounts for DST) and only actually sends once it's the anniversary day of the month **and** the local hour is 9 or later — the "or later" is deliberate, so that if a send fails at 09:00 (e.g. Gmail is temporarily unreachable), the next hourly run that same day retries it, without waiting for next month. Once a recipient has a successful delivery recorded for that month, later runs skip them for the rest of the day. Nothing is ever backfilled for a day that's already passed.
+The function then resolves the current time in `Europe/Belgrade` (via `Intl.DateTimeFormat`, which already accounts for DST) and only actually sends once it's the anniversary day of the month **and** the local hour is 9 or later. 08:00 UTC is deliberately chosen so that check always passes on the day it runs: it's exactly 09:00 local in winter (CET, UTC+1) and 10:00 local in summer (CEST, UTC+2) — never earlier than 9. So the real send time is 09:00 sharp roughly half the year, and drifts up to an hour late the rest of the year; it never misses a day entirely.
 
-**If your Vercel plan only allows one cron invocation per day** (not hourly), you'll need to pick a single fixed UTC hour instead, and accept that the actual local send time will drift by up to an hour depending on the season — e.g. `"0 8 * * *"` sends at exactly 09:00 Belgrade time in winter (CET) but 10:00 in summer (CEST). Upgrading to a plan with hourly cron is the only way to hit 09:00 local exactly year-round with this design.
+The tradeoff of only one invocation per day: there's no same-day retry window. If a send fails (e.g. Gmail is temporarily unreachable) at that one daily check, it won't be retried until the same time next day — by which point it's no longer the anniversary day, so that month's email for whichever recipient failed simply doesn't go out. Nothing is ever backfilled for a day that's already passed. Upgrading to a plan with more frequent cron and changing the schedule back to hourly (`"0 * * * *"`) removes this limitation and gives same-day retries, since the code's `>= 9` check (rather than `=== 9`) already supports that without any other changes.
 
 ### Setup
 
