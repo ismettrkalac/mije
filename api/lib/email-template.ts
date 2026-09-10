@@ -1,4 +1,4 @@
-import type { Recipient } from "./recipients";
+import type { Recipient } from "./recipients.js";
 
 export interface EmailContent {
   subject: string;

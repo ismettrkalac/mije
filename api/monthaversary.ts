@@ -2,7 +2,7 @@
  * Monthly anniversary emails.
  *
  * Triggered hourly by Vercel Cron (see vercel.json) so it can check "is it
- * currently 09:00 in Europe/Belgrade, on the relationship's anniversary day
+ * currently 10:00 in Europe/Belgrade, on the relationship's anniversary day
  * of the month" without depending on a scheduler that understands
  * timezones or DST — see the timezone note in README for the tradeoffs on
  * plans that only allow daily cron invocations.
@@ -14,14 +14,14 @@
  * without that secret.
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { gardenConfig } from "../src/config";
-import { computeAnniversaryStatus, getHourInTimezone, monthKey } from "./lib/anniversary";
-import { loadRecipients } from "./lib/recipients";
-import { renderBloomEmail, renderMonthlyEmail } from "./lib/email-template";
-import { getDelivery, markDelivered } from "./lib/delivery-store";
-import { sendEmail } from "./lib/mailer";
+import { gardenConfig } from "../src/config.js";
+import { computeAnniversaryStatus, getHourInTimezone, monthKey } from "./lib/anniversary.js";
+import { loadRecipients } from "./lib/recipients.js";
+import { renderBloomEmail, renderMonthlyEmail } from "./lib/email-template.js";
+import { getDelivery, markDelivered } from "./lib/delivery-store.js";
+import { sendEmail } from "./lib/mailer.js";
 
-const SEND_FROM_HOUR = 9;
+const SEND_FROM_HOUR = 10;
 
 interface RecipientResult {
   recipientId: string;

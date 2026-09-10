@@ -7,7 +7,7 @@
 import {
   calendarDaysBetween,
   toCalendarDateString,
-} from "../../src/lib/date";
+} from "../../src/lib/date.js";
 
 export interface AnniversaryStatus {
   /** Today's calendar date (YYYY-MM-DD) as seen in the configured timezone. */

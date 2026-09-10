@@ -90,7 +90,7 @@ The optional monthly anniversary emails (below) are the one part of this project
 
 ## Monthly anniversary emails
 
-A separate, optional piece: `/api/monthaversary.ts` is a Vercel serverless function, triggered by Vercel Cron, that emails both of you a "Happy monthaversary!" note every month on the relationship's anniversary day (the same day-of-month as `startDate` in `src/config.ts` — the 11th, in the default config), at 09:00 Europe/Belgrade time. It's independent of the frontend — the static site works fine with or without this configured.
+A separate, optional piece: `/api/monthaversary.ts` is a Vercel serverless function, triggered by Vercel Cron, that emails both of you a "Happy monthaversary!" note every month on the relationship's anniversary day (the same day-of-month as `startDate` in `src/config.ts` — the 11th, in the default config), at 10:00 Europe/Belgrade time. It's independent of the frontend — the static site works fine with or without this configured.
 
 - Before the configured `bloomDate`, the email includes days remaining until the lily blooms.
 - On `bloomDate` itself, a special "the lily has bloomed" email is sent instead (no countdown).
@@ -100,15 +100,15 @@ A separate, optional piece: `/api/monthaversary.ts` is a Vercel serverless funct
 
 ### How the schedule works (and why it needs a periodic check, not a fixed-time cron)
 
-Vercel Cron schedules are UTC-only, and Hobby-plan projects are limited to **one cron invocation per day** (a more frequent expression fails at deployment — this is why the first deploy attempt here failed until the schedule below was in place). But 09:00 in Europe/Belgrade shifts between UTC+1 (CET) and UTC+2 (CEST) across the year, so a single fixed UTC time can't land on 09:00 local in both seasons. `vercel.json` schedules the function once daily, at **08:00 UTC**:
+Vercel Cron schedules are UTC-only, and Hobby-plan projects are limited to **one cron invocation per day** (a more frequent expression fails at deployment — this is why the first deploy attempt here failed until the schedule below was in place). But 10:00 in Europe/Belgrade shifts between UTC+1 (CET) and UTC+2 (CEST) across the year, so a single fixed UTC time can't land on 10:00 local in both seasons. `vercel.json` schedules the function once daily, at **09:00 UTC**:
 
 ```json
-{ "crons": [{ "path": "/api/monthaversary", "schedule": "0 8 * * *" }] }
+{ "crons": [{ "path": "/api/monthaversary", "schedule": "0 9 * * *" }] }
 ```
 
-The function then resolves the current time in `Europe/Belgrade` (via `Intl.DateTimeFormat`, which already accounts for DST) and only actually sends once it's the anniversary day of the month **and** the local hour is 9 or later. 08:00 UTC is deliberately chosen so that check always passes on the day it runs: it's exactly 09:00 local in winter (CET, UTC+1) and 10:00 local in summer (CEST, UTC+2) — never earlier than 9. So the real send time is 09:00 sharp roughly half the year, and drifts up to an hour late the rest of the year; it never misses a day entirely.
+The function then resolves the current time in `Europe/Belgrade` (via `Intl.DateTimeFormat`, which already accounts for DST) and only actually sends once it's the anniversary day of the month **and** the local hour is 10 or later. 09:00 UTC is deliberately chosen so that check always passes on the day it runs: it's exactly 10:00 local in winter (CET, UTC+1) and 11:00 local in summer (CEST, UTC+2) — never earlier than 10. So the real send time is 10:00 sharp roughly half the year, and drifts up to an hour late the rest of the year; it never misses a day entirely.
 
-The tradeoff of only one invocation per day: there's no same-day retry window. If a send fails (e.g. Gmail is temporarily unreachable) at that one daily check, it won't be retried until the same time next day — by which point it's no longer the anniversary day, so that month's email for whichever recipient failed simply doesn't go out. Nothing is ever backfilled for a day that's already passed. Upgrading to a plan with more frequent cron and changing the schedule back to hourly (`"0 * * * *"`) removes this limitation and gives same-day retries, since the code's `>= 9` check (rather than `=== 9`) already supports that without any other changes.
+The tradeoff of only one invocation per day: there's no same-day retry window. If a send fails (e.g. Gmail is temporarily unreachable) at that one daily check, it won't be retried until the same time next day — by which point it's no longer the anniversary day, so that month's email for whichever recipient failed simply doesn't go out. Nothing is ever backfilled for a day that's already passed. Upgrading to a plan with more frequent cron and changing the schedule back to hourly (`"0 * * * *"`) removes this limitation and gives same-day retries, since the code's `>= 10` check (rather than `=== 10`) already supports that without any other changes.
 
 ### Setup
 
