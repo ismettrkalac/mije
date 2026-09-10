@@ -19,7 +19,7 @@ import { computeAnniversaryStatus, getHourInTimezone, monthKey } from "./lib/ann
 import { loadRecipients } from "./lib/recipients";
 import { renderBloomEmail, renderMonthlyEmail } from "./lib/email-template";
 import { getDelivery, markDelivered } from "./lib/delivery-store";
-import { sendEmail } from "./lib/resend";
+import { sendEmail } from "./lib/mailer";
 
 const SEND_FROM_HOUR = 9;
 
@@ -99,22 +99,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       continue;
     }
 
-    const resendApiKey = process.env.RESEND_API_KEY;
-    const resendFrom = process.env.RESEND_FROM;
-    if (!resendApiKey || !resendFrom) {
-      results.push({ recipientId: recipient.id, status: "error", detail: "RESEND_API_KEY/RESEND_FROM not configured" });
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+    if (!gmailUser || !gmailAppPassword) {
+      results.push({ recipientId: recipient.id, status: "error", detail: "GMAIL_USER/GMAIL_APP_PASSWORD not configured" });
       continue;
     }
 
     try {
-      const sent = await sendEmail(resendApiKey, {
-        from: resendFrom,
+      const sent = await sendEmail(gmailUser, gmailAppPassword, {
+        from: gmailUser,
         to: recipient.email,
         subject: content.subject,
         html: content.html,
-        idempotencyKey: `monthaversary-${recipient.id}-${key}`,
       });
-      await markDelivered(recipient.id, key, sent.id);
+      await markDelivered(recipient.id, key, sent.messageId);
       results.push({ recipientId: recipient.id, status: "sent" });
     } catch (err) {
       results.push({ recipientId: recipient.id, status: "error", detail: (err as Error).message });

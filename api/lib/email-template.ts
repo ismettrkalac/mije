@@ -5,9 +5,33 @@ export interface EmailContent {
   html: string;
 }
 
+/** Serbian noun agreement for "mesec" (month): 1 mesec, 2-4 meseca, else meseci. */
+function monthWord(n: number): string {
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 14) return "meseci";
+  const mod10 = n % 10;
+  if (mod10 === 1) return "mesec";
+  if (mod10 >= 2 && mod10 <= 4) return "meseca";
+  return "meseci";
+}
+
+/** Serbian noun agreement for "dan" (day): 1 dan, else dana. */
+function dayWord(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  return mod10 === 1 && mod100 !== 11 ? "dan" : "dana";
+}
+
+function monthsLabel(n: number): string {
+  return `${n} ${monthWord(n)}`;
+}
+
 function shell(bodyHtml: string): string {
   return `<!doctype html>
-<html>
+<html lang="sr">
+  <head>
+    <meta charset="utf-8" />
+  </head>
   <body style="margin:0;padding:32px 16px;background:#fdf5f7;font-family:Georgia,'Times New Roman',serif;color:#3a2c30;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr>
@@ -34,24 +58,24 @@ export function renderMonthlyEmail(
   recipient: Recipient,
   opts: { monthsCompleted: number; daysUntilBloom: number | null; siteUrl: string },
 ): EmailContent {
-  const monthsLabel = opts.monthsCompleted === 1 ? "1 month" : `${opts.monthsCompleted} months`;
-  const subject = `Happy monthaversary! ${monthsLabel} together`;
+  const months = monthsLabel(opts.monthsCompleted);
+  const subject = `Srećna mesečnica! ${months} zajedno`;
 
   const countdownHtml =
     opts.daysUntilBloom !== null
       ? `<p style="margin:20px 0 0;font-size:15px;line-height:1.6;color:#7a5c66;">
-           Our lily has ${opts.daysUntilBloom} ${opts.daysUntilBloom === 1 ? "day" : "days"} left before it blooms.
+           Našem ljiljanu je ostalo još ${opts.daysUntilBloom} ${dayWord(opts.daysUntilBloom)} do cvetanja.
          </p>`
       : "";
 
   const bodyHtml = `
-    <p style="margin:0;font-size:14px;letter-spacing:0.08em;text-transform:uppercase;color:#c98ea3;">Happy monthaversary</p>
-    <h1 style="margin:12px 0 0;font-size:26px;font-weight:normal;color:#3a2c30;">${monthsLabel} together, ${escapeHtml(recipient.name)}</h1>
+    <p style="margin:0;font-size:14px;letter-spacing:0.08em;text-transform:uppercase;color:#c98ea3;">Srećna mesečnica</p>
+    <h1 style="margin:12px 0 0;font-size:26px;font-weight:normal;color:#3a2c30;">${months} zajedno, ${escapeHtml(recipient.name)}</h1>
     <p style="margin:20px 0 0;font-size:16px;line-height:1.6;color:#4a3a3f;">
-      Another month down, and I'd choose every single one of them with you again. Here's to the next one.
+      Još jedan mesec nas. Hvala ti što si moja ljubav. Jedva čekam sve što nas još čeka. Srećna nam mesečnica 🤍
     </p>
     ${countdownHtml}
-    ${button(opts.siteUrl, "Visit our lily")}
+    ${button(opts.siteUrl, "Poseti naš ljiljan")}
   `;
 
   return { subject, html: shell(bodyHtml) };
@@ -61,16 +85,16 @@ export function renderBloomEmail(
   recipient: Recipient,
   opts: { monthsCompleted: number; siteUrl: string },
 ): EmailContent {
-  const monthsLabel = opts.monthsCompleted === 1 ? "1 month" : `${opts.monthsCompleted} months`;
-  const subject = "Our lily has bloomed";
+  const months = monthsLabel(opts.monthsCompleted);
+  const subject = "Naš ljiljan je procvetao";
 
   const bodyHtml = `
-    <p style="margin:0;font-size:14px;letter-spacing:0.08em;text-transform:uppercase;color:#c98ea3;">It bloomed</p>
-    <h1 style="margin:12px 0 0;font-size:26px;font-weight:normal;color:#3a2c30;">Our lily has bloomed, ${escapeHtml(recipient.name)}</h1>
+    <p style="margin:0;font-size:14px;letter-spacing:0.08em;text-transform:uppercase;color:#c98ea3;">Procvetalo je</p>
+    <h1 style="margin:12px 0 0;font-size:26px;font-weight:normal;color:#3a2c30;">Naš ljiljan je procvetao, ${escapeHtml(recipient.name)}</h1>
     <p style="margin:20px 0 0;font-size:16px;line-height:1.6;color:#4a3a3f;">
-      ${monthsLabel} of growing it together, a little more each day, and today it's finally open. Happy monthaversary.
+      ${months} zajedničkog gajenja, malo po malo svakog dana, i danas se konačno otvorio. Srećna mesečnica.
     </p>
-    ${button(opts.siteUrl, "See it bloom")}
+    ${button(opts.siteUrl, "Pogledaj cvet")}
   `;
 
   return { subject, html: shell(bodyHtml) };

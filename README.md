@@ -8,7 +8,7 @@ A private, single-page gift site: a pink lily that grows a little every day from
 - `motion/react` for animation
 - Plain CSS (no UI framework)
 - `localStorage` for the "watered today" record — no backend, no accounts, no tracking
-- Optionally: a Vercel serverless function + Vercel Cron + Redis + Resend for the monthly anniversary emails (see [below](#monthly-anniversary-emails)) — the frontend itself works fully without any of this configured
+- Optionally: a Vercel serverless function + Vercel Cron + Gmail SMTP for the monthly anniversary emails, with delivery tracking stored as a JSON file in this GitHub repo (see [below](#monthly-anniversary-emails)) — the frontend itself works fully without any of this configured
 
 ## Setup
 
@@ -106,22 +106,28 @@ Vercel Cron schedules are UTC-only and (on most plans) can't run more than once 
 { "crons": [{ "path": "/api/monthaversary", "schedule": "0 * * * *" }] }
 ```
 
-Every hour, the function resolves the current time in `Europe/Belgrade` (via `Intl.DateTimeFormat`, which already accounts for DST) and only actually sends once it's the anniversary day of the month **and** the local hour is 9 or later — the "or later" is deliberate, so that if a send fails at 09:00 (e.g. Resend is down), the next hourly run that same day retries it, without waiting for next month. Once a recipient has a successful delivery recorded for that month, later runs skip them for the rest of the day. Nothing is ever backfilled for a day that's already passed.
+Every hour, the function resolves the current time in `Europe/Belgrade` (via `Intl.DateTimeFormat`, which already accounts for DST) and only actually sends once it's the anniversary day of the month **and** the local hour is 9 or later — the "or later" is deliberate, so that if a send fails at 09:00 (e.g. Gmail is temporarily unreachable), the next hourly run that same day retries it, without waiting for next month. Once a recipient has a successful delivery recorded for that month, later runs skip them for the rest of the day. Nothing is ever backfilled for a day that's already passed.
 
 **If your Vercel plan only allows one cron invocation per day** (not hourly), you'll need to pick a single fixed UTC hour instead, and accept that the actual local send time will drift by up to an hour depending on the season — e.g. `"0 8 * * *"` sends at exactly 09:00 Belgrade time in winter (CET) but 10:00 in summer (CEST). Upgrading to a plan with hourly cron is the only way to hit 09:00 local exactly year-round with this design.
 
 ### Setup
 
-1. **Resend account** ([resend.com](https://resend.com)): sign up, add and verify a sending domain (DNS records they give you), then create an API key.
+1. **Enable 2-Step Verification** on the sending Gmail account, if not already on (myaccount.google.com/security), then generate an **App Password** at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) (choose "Mail" / "Other"). This is a 16-character password scoped to SMTP access — not your real Google password.
 2. **Deploy this repo to Vercel** (if not already) so `vercel.json`'s cron config takes effect — cron jobs only run for production deployments.
-3. **Add a Redis store**: in the Vercel dashboard → your project → Storage → add a Redis integration (Upstash-backed). This provisions `KV_REST_API_URL` / `KV_REST_API_TOKEN` (or `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` — either naming is supported) as project env vars automatically. This is the durable store that tracks, per recipient and per month, whether that anniversary's email has already been sent — so retries never double-send.
+3. **Create a fine-grained GitHub personal access token**, scoped to only this repo, with **Contents: Read and write** permission and nothing else: [github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta) → "Generate new token" → Repository access: "Only select repositories" → this repo → Permissions → Repository permissions → Contents → Read and write. This is the durable store: the function commits a small JSON file (`data/monthaversary-deliveries.json` by default) to this repo recording, per recipient and per month, whether that anniversary's email has already been sent — so retries never double-send. No paid database needed.
 4. **Set the remaining environment variables** (Project Settings → Environment Variables — see [`.env.example`](.env.example) for the full list with descriptions):
-   - `RESEND_API_KEY` — from step 1.
-   - `RESEND_FROM` — an address on your verified domain, e.g. `"Us <hello@yourdomain.com>"`.
+   - `GMAIL_USER` — the Gmail address emails are sent from.
+   - `GMAIL_APP_PASSWORD` — from step 1.
    - `ANNIVERSARY_RECIPIENTS` — JSON array of `{"id", "name", "email"}` for each of you. `id` is a stable key used for delivery-dedup; don't change it once emails have gone out for that recipient.
    - `SITE_URL` — the deployed gift site's URL, used for the email's button.
    - `CRON_SECRET` — any long random string (`openssl rand -hex 32`). Vercel automatically sends it as `Authorization: Bearer <value>` on its own Cron requests once this env var exists; you pass it yourself for manual/dry-run calls. **There is no way to trigger a send, or see/change recipients, without this secret** — the endpoint 401s without it.
+   - `GITHUB_DATA_TOKEN` — from step 3.
+   - `GITHUB_DATA_REPO` — `owner/repo` of this repository, e.g. `ismettrkalac/mije`.
 5. Redeploy so the new env vars and `vercel.json` cron config take effect.
+
+No domain purchase, DNS setup, or paid storage is needed with this approach — emails send from your existing Gmail address, and delivery records live in this GitHub repo. Two tradeoffs worth knowing:
+- Gmail SMTP has no idempotency-key mechanism, so duplicate-send protection relies solely on the delivery record being checked before every send (see `api/lib/delivery-store.ts`) rather than a provider-side guarantee.
+- Since Vercel auto-deploys on push and the delivery record is committed to the same repo/branch as the site, each month's send also triggers a small redeploy of the site (harmless, just worth expecting).
 
 ### Dry run (preview without sending)
 
@@ -134,7 +140,7 @@ Returns the rendered subject/HTML for each recipient without sending anything or
 
 ### If credentials aren't set up yet
 
-The integration is fully implemented and safe to deploy as-is: with `RESEND_API_KEY`/`RESEND_FROM` unset, real sends fail gracefully per-recipient (reported in the JSON response, nothing left half-sent) while dry runs keep working for previewing copy. Nothing here can send an email or expose a recipient's address without the `CRON_SECRET` — there's no public/unauthenticated path in.
+The integration is fully implemented and safe to deploy as-is: with `GMAIL_USER`/`GMAIL_APP_PASSWORD` unset, real sends fail gracefully per-recipient (reported in the JSON response, nothing left half-sent) while dry runs keep working for previewing copy. Nothing here can send an email or expose a recipient's address without the `CRON_SECRET` — there's no public/unauthenticated path in.
 
 ## Project structure
 
@@ -166,8 +172,8 @@ api/                        Vercel serverless function (see "Monthly anniversary
     anniversary.ts           Anniversary-day / bloom-day date math
     recipients.ts            Parses ANNIVERSARY_RECIPIENTS env var
     email-template.ts        Renders the monthly + bloom-day email HTML
-    resend.ts                Minimal Resend REST client (Idempotency-Key)
-    delivery-store.ts        Redis-backed per-recipient/per-month send tracking
+    mailer.ts                 Sends via Gmail SMTP (nodemailer)
+    delivery-store.ts        Per-recipient/per-month send tracking, stored as a JSON file via the GitHub Contents API
 
 vercel.json                  Hourly cron schedule for api/monthaversary.ts
 .env.example                 Documents required env vars for the email function
