@@ -80,6 +80,10 @@ On the bloom date, the flower plays a one-time opening animation and an "Open yo
 
 In `npm run dev`, a small "Dev: date preview" panel appears bottom-left with buttons to jump the displayed date to: before the start date, early/mid/late growth, the day before bloom, bloom day, and 30 days after bloom. It only overrides what date the UI *thinks* it is — it never writes to `localStorage`, so previewing never affects the real watering record. This panel is stripped out of production builds automatically (`import.meta.env.DEV` gate) and never renders in `npm run build` / `npm run preview`.
 
+## Browser support
+
+The build targets Chrome 79+ (`vite.config.ts`), so Chromium-based browsers on older Android phones — including Huawei Browser on EMUI/HarmonyOS — work. The layout deliberately avoids newer CSS (`dvh` units, `inset`, `aspect-ratio`) and positions the plant with percentages of the viewport-pinned container instead. Not covered by automated tests: check on a real device before relying on it.
+
 ## Building and deploying
 
 ```bash

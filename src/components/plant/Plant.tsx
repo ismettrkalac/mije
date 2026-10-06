@@ -30,7 +30,7 @@ export interface PlantProps {
 const CX = 200;
 /** The vase's rim line — where the stem appears to emerge from the illustrated vase. */
 const BASE_Y = 355;
-const MAX_STEM_HEIGHT = 300;
+const MAX_STEM_HEIGHT = 330;
 const CURVE_AMOUNT = 22;
 
 interface LeafSlot {
@@ -60,10 +60,10 @@ const LEAF_SLOTS: LeafSlot[] = [
 
 function stemHeightForGrowth(growth: number): number {
   if (growth <= 0.15) {
-    return 18 + easeInOut(localProgress(growth, 0, 0.15)) * 32;
+    return 26 + easeInOut(localProgress(growth, 0, 0.15)) * 34;
   }
   if (growth <= 0.75) {
-    return 50 + easeInOut(localProgress(growth, 0.15, 0.75)) * (MAX_STEM_HEIGHT * 0.92 - 50);
+    return 60 + easeInOut(localProgress(growth, 0.15, 0.75)) * (MAX_STEM_HEIGHT * 0.92 - 60);
   }
   return (
     MAX_STEM_HEIGHT * 0.92 +
@@ -93,8 +93,8 @@ export function Plant({
   const tipAngle = cubicBezierTangentAngle(p0, p1, p2, p3, 1);
   const budSwell = localProgress(growth, 0.75, 1);
   /** Stems start thin and sturdy up as the plant matures. */
-  const baseWidth = growth > 0.15 ? 11 : 5.5;
-  const tipWidth = growth > 0.15 ? 4.6 : 2.8;
+  const baseWidth = growth > 0.15 ? 12.5 : 6.5;
+  const tipWidth = growth > 0.15 ? 5.4 : 3.4;
 
   useEffect(() => {
     if (tapPulse === 0) return;

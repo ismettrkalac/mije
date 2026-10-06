@@ -1,18 +1,26 @@
 .app-root {
-  position: relative;
+  /* Pinned to the viewport (like the fixed photo behind it) so nothing, including the vase that
+     sits on the photo's table, can scroll or rubber-band away from the background. */
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   isolation: isolate;
-  min-height: 100dvh;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   background: var(--room-fallback);
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .room-background {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
@@ -20,7 +28,10 @@
 
 .room-photo {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   background-color: var(--room-fallback);
   background-image: url("/background.webp");
   background-size: cover;
@@ -29,7 +40,10 @@
 
 .room-scrim {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   background: linear-gradient(
     to bottom,
     rgba(255, 252, 244, 0.35) 0%,
@@ -41,7 +55,10 @@
 
 .ambient-particles {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   z-index: 2; /* above the plant so petal and sparkle bursts aren't hidden behind it */
@@ -93,21 +110,22 @@
 }
 
 /* The photo is square and `cover`-fitted, so its table edge (~82.5% down the image) lands at
-   0.325 * max(width, height) + 50dvh on screen. The plant SVG is 400x630 (stage height = 1.575 x
-   width) and its vase foot is at the bottom, so the stage is lifted to put the foot on that line.
-   On very wide screens the line would fall under the Water button, so it is capped. */
+   0.325 * max(width, height) + 50% of the height on screen. The plant SVG is 400x630 (stage height
+   = 1.575 x width) and its vase foot is at the bottom, so the stage is lifted to put the foot on
+   that line. On very wide screens the line would fall under the Water button, so it is capped.
+   Percentages resolve against .garden-content, which is pinned to the visible viewport, so this
+   needs no `dvh` units (unsupported before Chrome 108, e.g. older Huawei/EMUI browsers). */
 .app-root {
   --stage-width: min(56vw, 225px);
   --stage-height: calc(var(--stage-width) * 1.575);
   --footer-reserve: 80px;
-  --table-y: min(calc(max(100vw, 100dvh) * 0.325 + 50dvh), calc(100dvh - 110px));
 }
 
 .garden-stage {
   position: absolute;
   top: min(
-    calc(var(--table-y) + 12px - var(--stage-height)),
-    calc(97dvh - var(--footer-reserve) - var(--stage-height))
+    calc(min(max(100vw, 100%) * 0.325 + 50%, 100% - 110px) + 12px - var(--stage-height)),
+    calc(97% - var(--footer-reserve) - var(--stage-height))
   );
   left: 51%;
   transform: translateX(-50%);
@@ -151,7 +169,10 @@
 .watering-overlay {
   overflow: visible;
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
@@ -160,7 +181,7 @@
 .garden-footer {
   position: absolute;
   left: 50%;
-  bottom: 3vh;
+  bottom: 3%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
@@ -225,7 +246,10 @@
 .open-letter-button::after {
   content: "";
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.85) 50%, transparent 70%);
   transform: translateX(-120%);
   animation: letter-shimmer 3.6s ease-in-out infinite;
@@ -355,7 +379,10 @@
 
 .letter-backdrop {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 20;
   display: flex;
   align-items: center;
