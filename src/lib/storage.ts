@@ -4,15 +4,19 @@
  * it just behaves as if nothing was ever saved.
  */
 
+let storageAvailable: boolean | undefined;
+
 function isStorageAvailable(): boolean {
+  if (storageAvailable !== undefined) return storageAvailable;
   try {
     const testKey = "__lily_storage_test__";
     window.localStorage.setItem(testKey, "1");
     window.localStorage.removeItem(testKey);
-    return true;
+    storageAvailable = true;
   } catch {
-    return false;
+    storageAvailable = false;
   }
+  return storageAvailable;
 }
 
 export function readString(key: string): string | null {
@@ -30,24 +34,6 @@ export function writeString(key: string, value: string): void {
     window.localStorage.setItem(key, value);
   } catch {
     // Ignore quota / privacy-mode failures; the app degrades gracefully.
-  }
-}
-
-export function readJSON<T>(key: string): T | null {
-  const raw = readString(key);
-  if (raw == null) return null;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
-}
-
-export function writeJSON<T>(key: string, value: T): void {
-  try {
-    writeString(key, JSON.stringify(value));
-  } catch {
-    // Ignore serialization failures.
   }
 }
 

@@ -49,3 +49,49 @@ export function localProgress(growth: number, from: number, to: number): number 
   if (to <= from) return growth >= to ? 1 : 0;
   return Math.min(1, Math.max(0, (growth - from) / (to - from)));
 }
+
+/** Linear interpolation. */
+export function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+/**
+ * Closed outline of a tapering stem: a filled ribbon that follows the cubic Bezier and narrows
+ * from `baseWidth` to `tipWidth`, instead of a constant-width stroke.
+ */
+export function taperedStemPath(
+  p0: Point,
+  p1: Point,
+  p2: Point,
+  p3: Point,
+  baseWidth: number,
+  tipWidth: number,
+  samples = 28,
+  /** How far the stem continues backwards past p0 (e.g. down into the vase). */
+  baseExtension = 0,
+): string {
+  const left: Point[] = [];
+  const right: Point[] = [];
+  if (baseExtension > 0) {
+    const startAngle = (cubicBezierTangentAngle(p0, p1, p2, p3, 0) * Math.PI) / 180;
+    const half = baseWidth / 2;
+    const base = {
+      x: p0.x - Math.cos(startAngle) * baseExtension,
+      y: p0.y - Math.sin(startAngle) * baseExtension,
+    };
+    left.push({ x: base.x - Math.sin(startAngle) * half, y: base.y + Math.cos(startAngle) * half });
+    right.push({ x: base.x + Math.sin(startAngle) * half, y: base.y - Math.cos(startAngle) * half });
+  }
+  for (let i = 0; i <= samples; i++) {
+    const t = i / samples;
+    const c = cubicBezierPoint(p0, p1, p2, p3, t);
+    const angle = (cubicBezierTangentAngle(p0, p1, p2, p3, t) * Math.PI) / 180;
+    const half = lerp(baseWidth, tipWidth, Math.pow(t, 0.8)) / 2;
+    const nx = -Math.sin(angle);
+    const ny = Math.cos(angle);
+    left.push({ x: c.x + nx * half, y: c.y + ny * half });
+    right.push({ x: c.x - nx * half, y: c.y - ny * half });
+  }
+  const pts = [...left, ...right.reverse()];
+  return `M${pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" L")} Z`;
+}

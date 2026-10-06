@@ -4,7 +4,7 @@
  * addresses.
  */
 export interface Recipient {
-  /** Stable identifier used as part of the KV dedup key. Change it and the
+  /** Stable identifier used as part of the delivery-record key. Change it and the
    * recipient will be treated as new (re-sent) for the current month. */
   id: string;
   name: string;
@@ -24,7 +24,7 @@ export function loadRecipients(): Recipient[] {
   try {
     parsed = JSON.parse(raw);
   } catch (err) {
-    throw new Error(`ANNIVERSARY_RECIPIENTS is not valid JSON: ${(err as Error).message}`);
+    throw new Error(`ANNIVERSARY_RECIPIENTS is not valid JSON: ${(err as Error).message}`, { cause: err });
   }
 
   if (!Array.isArray(parsed) || parsed.length === 0) {

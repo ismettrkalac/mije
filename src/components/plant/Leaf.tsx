@@ -1,4 +1,3 @@
-import { motion } from "motion/react";
 import type { Point } from "./geometry";
 
 interface LeafProps {
@@ -7,61 +6,104 @@ interface LeafProps {
   stemAngle: number;
   side: "left" | "right";
   length: number;
-  /** 0..1 local growth progress for this individual leaf. */
+  /** How far the leaf's own axis splays away from the stem, in degrees. */
+  splay: number;
+  /** 0 = stiff and upright, 1 = arching over and drooping at the tip. */
+  droop: number;
+  /** 0..1 local growth progress for this individual leaf (may overshoot slightly). */
   growth: number;
   reducedMotion: boolean;
+  /** Seconds; staggers the grow-in and the idle sway between leaves. */
   swayDelay: number;
 }
 
-export function Leaf({ attach, stemAngle, side, length, growth, reducedMotion, swayDelay }: LeafProps) {
+const SAMPLES = 18;
+
+/** Lily leaves are long, narrow and lance-shaped, arching over under their own weight. */
+function buildLeaf(length: number, droop: number, dir: 1 | -1) {
+  const p0: Point = { x: 0, y: 0 };
+  const p1: Point = { x: dir * length * 0.06, y: -length * 0.62 };
+  const p2: Point = { x: dir * length * (0.08 + 0.5 * droop), y: -length * (1 - 0.55 * droop) };
+  const maxHalfWidth = length * 0.15;
+
+  const center: Point[] = [];
+  const sideA: Point[] = [];
+  const sideB: Point[] = [];
+  for (let i = 0; i <= SAMPLES; i++) {
+    const t = i / SAMPLES;
+    const mt = 1 - t;
+    const x = mt * mt * p0.x + 2 * mt * t * p1.x + t * t * p2.x;
+    const y = mt * mt * p0.y + 2 * mt * t * p1.y + t * t * p2.y;
+    const dx = 2 * mt * (p1.x - p0.x) + 2 * t * (p2.x - p1.x);
+    const dy = 2 * mt * (p1.y - p0.y) + 2 * t * (p2.y - p1.y);
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+    const half = maxHalfWidth * Math.sin(Math.PI * Math.pow(t, 0.75)) * (1 - 0.3 * t);
+    center.push({ x, y });
+    sideA.push({ x: x + nx * half, y: y + ny * half });
+    sideB.push({ x: x - nx * half, y: y - ny * half });
+  }
+
+  const poly = (pts: Point[]) => pts.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(" L");
+  const half = (side: Point[]) => `M${poly(side)} L${poly([...center].reverse())} Z`;
+
+  /** A vein line running parallel to the midrib at `fraction` of the local half-width. */
+  const vein = (fraction: number) => {
+    const pts = center.slice(2, SAMPLES - 1).map((c, idx) => {
+      const i = idx + 2;
+      return {
+        x: c.x + (sideA[i].x - c.x) * fraction,
+        y: c.y + (sideA[i].y - c.y) * fraction,
+      };
+    });
+    return `M${poly(pts)}`;
+  };
+
+  return {
+    outline: `M${poly(sideA)} L${poly([...sideB].reverse())} Z`,
+    halfA: half(sideA),
+    halfB: half(sideB),
+    midrib: `M${poly(center.slice(0, SAMPLES - 1))}`,
+    veins: [vein(0.5), vein(-0.5)],
+  };
+}
+
+export function Leaf({ attach, stemAngle, side, length, splay, droop, growth, reducedMotion, swayDelay }: LeafProps) {
   if (growth <= 0) return null;
 
   const dir = side === "left" ? -1 : 1;
-  const splay = side === "left" ? -58 : 58;
-  const angle = stemAngle + 90 + splay;
-
-  const bulge = length * 0.19;
-  const tip = length;
-  const leafPath = `M0,0
-    C ${dir * bulge * 0.95},${-tip * 0.26} ${dir * bulge * 1.05},${-tip * 0.66} ${dir * bulge * 0.12},${-tip}
-    C ${-dir * bulge * 0.4},${-tip * 0.68} ${-dir * bulge * 0.55},${-tip * 0.28} 0,0 Z`;
-
-  const highlight = `M0,${-tip * 0.06}
-    C ${dir * bulge * 0.3},${-tip * 0.32} ${dir * bulge * 0.24},${-tip * 0.64} ${dir * bulge * 0.08},${-tip * 0.9}
-    C ${dir * bulge * 0.05},${-tip * 0.64} ${dir * bulge * 0.02},${-tip * 0.32} 0,${-tip * 0.06} Z`;
+  const angle = stemAngle + 90 + dir * splay;
+  const { outline, halfA, halfB, midrib, veins } = buildLeaf(length, droop, dir);
+  const flip = dir === 1;
 
   return (
-    <g transform={`translate(${attach.x}, ${attach.y}) rotate(${angle})`}>
-      <motion.g
-        style={{ transformOrigin: "0px 0px" }}
-        initial={{ scale: 0, opacity: 0 }}
-        animate={
-          reducedMotion
-            ? { scale: growth, opacity: 1, rotate: 0 }
-            : {
-                scale: growth,
-                opacity: 1,
-                rotate: [0, side === "left" ? -3 : 3, 0],
-              }
-        }
-        transition={
-          reducedMotion
-            ? { duration: 0.4 }
-            : {
-                scale: { type: "spring", stiffness: 90, damping: 14 },
-                opacity: { duration: 0.6 },
-                rotate: {
-                  duration: 4.5 + swayDelay,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: swayDelay,
-                },
-              }
-        }
+    <g transform={`translate(${attach.x}, ${attach.y}) rotate(${angle}) scale(${Math.max(0, growth)})`}>
+      {/* Animated with CSS (see .leaf-in / .leaf-sway in App.css): the pivot is this leaf's base. */}
+      <g
+        className={reducedMotion ? undefined : "leaf-in"}
+        style={{ ["--leaf-delay" as string]: `${swayDelay}s` }}
       >
-        <path d={leafPath} fill="url(#leafGradient)" stroke="var(--leaf-shade)" strokeWidth={0.6} opacity={0.97} />
-        <path d={highlight} fill="var(--leaf-highlight)" opacity={0.4} />
-      </motion.g>
+        <g
+          className={reducedMotion ? undefined : "leaf-sway"}
+          style={{
+            ["--sway-amp" as string]: `${dir * -2.5}deg`,
+            ["--sway-dur" as string]: `${5 + swayDelay}s`,
+            ["--sway-delay" as string]: `${swayDelay}s`,
+          }}
+        >
+          {/* two halves folded along the midrib: one lit, one in shade */}
+          <path d={flip ? halfA : halfB} fill="url(#leafGradient)" />
+          <path d={flip ? halfB : halfA} fill="url(#leafGradient)" />
+          <path d={flip ? halfB : halfA} fill="var(--leaf-shade)" opacity={0.28} />
+          {length > 40 &&
+            veins.map((d, i) => (
+              <path key={i} d={d} stroke="var(--leaf-highlight)" strokeWidth={0.5} fill="none" opacity={0.3} />
+            ))}
+          <path d={midrib} stroke="var(--leaf-highlight)" strokeWidth={length > 50 ? 1 : 0.7} fill="none" opacity={0.6} strokeLinecap="round" />
+          <path d={outline} fill="none" stroke="var(--leaf-shade)" strokeWidth={0.6} opacity={0.7} />
+        </g>
+      </g>
     </g>
   );
 }

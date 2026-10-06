@@ -19,6 +19,13 @@ npm run dev
 
 Open the printed local URL (Vite defaults to `http://localhost:5173`). The dev server hot-reloads on save.
 
+## Checks
+
+```bash
+npm run check   # typecheck + ESLint (frontend and API) + unit tests
+npm test        # just the Vitest unit tests (date, growth and anniversary logic)
+```
+
 ## Configuration
 
 Everything specific to this gift lives in one file: [`src/config.ts`](src/config.ts).
@@ -32,7 +39,7 @@ export const gardenConfig: GardenConfig = {
   heading: "A little more each day",
   caption: "Something beautiful is growing.",
   letterTitle: "For you",
-  letterText: "If patience could grow petals, it would look like this. ...",
+  letterText: "If patience could grow petals, it would look like this. ...", // line breaks and blank lines are kept
   letterSignature: "Yours, always",
 };
 ```
@@ -41,12 +48,12 @@ Change the dates, names, and letter text here — nothing else in the codebase n
 
 ### Background photo
 
-The room backdrop is a single image at [`public/background.png`](public/background.png) — a photo of a white vase on a table. The plant is positioned to grow up out of that vase's opening. To swap in a different photo:
+The room backdrop is a single image at [`public/background.webp`](public/background.webp) — a photo of a living room. The vase and plant are drawn in SVG on top of it (they don't depend on anything in the photo), so any background works. To swap in a different photo:
 
-1. Replace `public/background.png` with your own image (same filename, or update the path in `src/App.css` → `.room-photo`).
-2. The layout assumes the vase opening sits roughly **center-horizontally** and around **55% down** the image, and that the photo is roughly **square**. If your photo's vase is in a different spot, adjust the `.garden-stage` rule in `src/App.css` (`top`, `height`) until the stem lines up with the opening — the dev date-preview panel (see below) is the fastest way to check alignment at different growth stages without waiting for real days to pass.
+1. Replace `public/background.webp` with your own image (same filename, or update the path in `src/App.css` → `.room-photo`). Convert to WebP with `cwebp -q 82 your-photo.png -o public/background.webp` — it is ~30× smaller than the PNG.
+2. The plant is placed by the `.garden-stage` rule in `src/App.css` (about 39vh from the top, pulled up automatically when the screen is short so the vase never sits under the buttons). Adjust `top` there if you want it higher or lower on your photo — the dev date-preview panel (see below) is the fastest way to check different growth stages.
 
-> The bundled `background.png` is a photo the recipient/user supplied for their own private, non-commercial gift page. If you intend to publish this site somewhere public, make sure you have the rights to use whatever background photo you put in its place.
+> The bundled `background.webp` is a photo the recipient/user supplied for their own private, non-commercial gift page. If you intend to publish this site somewhere public, make sure you have the rights to use whatever background photo you put in its place.
 
 ## How growth is calculated
 
@@ -92,6 +99,8 @@ The optional monthly anniversary emails (below) are the one part of this project
 
 A separate, optional piece: `/api/monthaversary.ts` is a Vercel serverless function, triggered by Vercel Cron, that emails both of you a "Happy monthaversary!" note every month on the relationship's anniversary day (the same day-of-month as `startDate` in `src/config.ts` — the 11th, in the default config), at 10:00 Europe/Belgrade time. It's independent of the frontend — the static site works fine with or without this configured.
 
+- If the start date's day-of-month is 29–31, shorter months use their last day instead (a start on the 31st sends on Feb 28/29, Apr 30, …).
+- If a send fails — or an email goes out but its delivery record can't be saved — an alert email is sent to the sending Gmail address itself, so a failed month doesn't go unnoticed.
 - Before the configured `bloomDate`, the email includes days remaining until the lily blooms.
 - On `bloomDate` itself, a special "the lily has bloomed" email is sent instead (no countdown).
 - After `bloomDate`, monthly emails continue with no countdown.
@@ -114,7 +123,7 @@ The tradeoff of only one invocation per day: there's no same-day retry window. I
 
 1. **Enable 2-Step Verification** on the sending Gmail account, if not already on (myaccount.google.com/security), then generate an **App Password** at [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) (choose "Mail" / "Other"). This is a 16-character password scoped to SMTP access — not your real Google password.
 2. **Deploy this repo to Vercel** (if not already) so `vercel.json`'s cron config takes effect — cron jobs only run for production deployments.
-3. **Create a fine-grained GitHub personal access token**, scoped to only this repo, with **Contents: Read and write** permission and nothing else: [github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta) → "Generate new token" → Repository access: "Only select repositories" → this repo → Permissions → Repository permissions → Contents → Read and write. This is the durable store: the function commits a small JSON file (`data/monthaversary-deliveries.json` by default) to this repo recording, per recipient and per month, whether that anniversary's email has already been sent — so retries never double-send. No paid database needed.
+3. **Create a fine-grained GitHub personal access token**, scoped to only this repo, with **Contents: Read and write** permission and nothing else: [github.com/settings/tokens?type=beta](https://github.com/settings/tokens?type=beta) → "Generate new token" → Repository access: "Only select repositories" → this repo → Permissions → Repository permissions → Contents → Read and write. This is the durable store: the function commits a small JSON file (`data/monthaversary-deliveries.json` by default) to this repo recording, per recipient and per month, whether that anniversary's email has already been sent — so retries never double-send (saving the record is retried up to 3 times; if it still fails the run reports `sent-unrecorded` and alerts you rather than risking a duplicate). No paid database needed.
 4. **Set the remaining environment variables** (Project Settings → Environment Variables — see [`.env.example`](.env.example) for the full list with descriptions):
    - `GMAIL_USER` — the Gmail address emails are sent from.
    - `GMAIL_APP_PASSWORD` — from step 1.

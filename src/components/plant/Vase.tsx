@@ -10,8 +10,23 @@ const CX = 200;
  * photo, so the stem always aligns with a real opening regardless of how
  * the photo itself gets cropped on a given screen.
  */
+const RIM_HALF_WIDTH = 42;
+const OPENING_HALF_WIDTH = RIM_HALF_WIDTH - 8;
+
+/**
+ * The front half of the vase's rim, drawn AFTER the plant so the stem appears to go down inside the
+ * vase (passing behind the front lip) instead of resting on top of the opening.
+ */
+export function VaseLip({ rimY }: VaseProps) {
+  const lip = `M ${CX - RIM_HALF_WIDTH},${rimY}
+    A ${RIM_HALF_WIDTH} 9 0 0 0 ${CX + RIM_HALF_WIDTH},${rimY}
+    L ${CX + OPENING_HALF_WIDTH},${rimY - 1}
+    A ${OPENING_HALF_WIDTH} 6 0 0 1 ${CX - OPENING_HALF_WIDTH},${rimY - 1} Z`;
+  return <path d={lip} fill="url(#vaseRimGradient)" stroke="var(--vase-shade)" strokeWidth={0.4} aria-hidden="true" />;
+}
+
 export function Vase({ rimY }: VaseProps) {
-  const rimHalfWidth = 42;
+  const rimHalfWidth = RIM_HALF_WIDTH;
   const shoulderHalfWidth = 84;
   const shoulderY = rimY + 50;
   const waistY = rimY + 160;
@@ -39,7 +54,8 @@ export function Vase({ rimY }: VaseProps) {
 
   return (
     <g aria-hidden="true">
-      <ellipse cx={CX + 4} cy={footY + 18} rx={footHalfWidth + 30} ry={13} fill="var(--vase-contact-shadow)" opacity={0.3} />
+      <ellipse cx={CX + 6} cy={footY + 7} rx={footHalfWidth + 26} ry={9} fill="var(--vase-contact-shadow)" opacity={0.22} />
+      <ellipse cx={CX + 2} cy={footY + 4} rx={footHalfWidth + 6} ry={5} fill="var(--vase-contact-shadow)" opacity={0.4} />
 
       <path d={bodyPath} fill="url(#vaseGradient)" stroke="var(--vase-shade)" strokeWidth={0.6} />
 

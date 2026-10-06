@@ -46,11 +46,24 @@ const SPECKLES: { dx: number; dy: number; r: number }[] = [
   { dx: -0.02, dy: 0.24, r: 1.1 },
 ];
 
+/** The pale green-yellow throat lilies have at the base of each tepal, fading into the pink. */
+function throatPath(length: number, width: number): string {
+  return `M0,0
+    C ${-width * 0.34},${-length * 0.08} ${-width * 0.3},${-length * 0.3} 0,${-length * 0.46}
+    C ${width * 0.3},${-length * 0.3} ${width * 0.34},${-length * 0.08} 0,0 Z`;
+}
+
+/** Small, fixed per-petal variation so the bloom doesn't look stamped from one template. */
+const LENGTH_JITTER = [0, -4, 2, -5, 1, -3];
+const ANGLE_JITTER = [0, 3, -2, 4, -3, 2];
+
 function Petal({ length, width, gradientId, speckled }: { length: number; width: number; gradientId: string; speckled: boolean }) {
   return (
     <>
       <path d={petalPath(length, width)} fill={`url(#${gradientId})`} stroke="var(--petal-shade)" strokeWidth={0.5} opacity={0.98} />
       <path d={blushPath(length, width)} fill="var(--petal-outer)" opacity={0.5} />
+      <path d={throatPath(length, width)} fill="url(#petalThroatGradient)" />
+      <path d={`M0,${-length * 0.05} L0,${-length * 0.82}`} stroke="var(--petal-vein)" strokeWidth={0.7} strokeLinecap="round" opacity={0.55} />
       {speckled &&
         SPECKLES.map((s, i) => (
           <ellipse
@@ -73,7 +86,7 @@ export function Flower({ center, angle, playOpeningAnimation, reducedMotion }: F
   return (
     <g transform={`translate(${center.x}, ${center.y})`}>
       {Array.from({ length: OUTER_PETAL_COUNT }).map((_, i) => {
-        const petalAngle = angle + 90 + (360 / OUTER_PETAL_COUNT) * i;
+        const petalAngle = angle + 90 + (360 / OUTER_PETAL_COUNT) * i + ANGLE_JITTER[i];
         return (
           <g key={`outer-${i}`} transform={`rotate(${petalAngle})`}>
             <motion.g
@@ -91,7 +104,7 @@ export function Flower({ center, angle, playOpeningAnimation, reducedMotion }: F
                   : { duration: 0 }
               }
             >
-              <Petal length={64} width={17} gradientId="petalGradientOuter" speckled />
+              <Petal length={64 + LENGTH_JITTER[i]} width={17} gradientId="petalGradientOuter" speckled />
             </motion.g>
           </g>
         );

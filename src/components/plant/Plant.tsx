@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { motion, useAnimationControls } from "motion/react";
-import { Vase } from "./Vase";
+import { Vase, VaseLip } from "./Vase";
 import { Leaf } from "./Leaf";
 import { Bud } from "./Bud";
 import { Flower } from "./Flower";
@@ -10,6 +10,7 @@ import {
   easeInOut,
   easeOutBack,
   localProgress,
+  taperedStemPath,
   type Point,
 } from "./geometry";
 
@@ -22,7 +23,8 @@ export interface PlantProps {
   waterPulse: number;
   /** Increment to trigger a tap wiggle. */
   tapPulse: number;
-  onTap?: () => void;
+  /** Receives viewport coordinates of the tap when it came from a pointer. */
+  onTap?: (origin?: { x: number; y: number }) => void;
 }
 
 const CX = 200;
@@ -36,15 +38,24 @@ interface LeafSlot {
   side: "left" | "right";
   length: number;
   appearAt: number;
+  /** Degrees the leaf splays away from the stem. */
+  splay: number;
+  /** 0 stiff .. 1 drooping. Lower, older leaves arch over more; new growth stays upright. */
+  droop: number;
 }
 
+/** Alternating, slightly irregular pairs: older leaves low and long-drooping, new growth near the top upright. */
 const LEAF_SLOTS: LeafSlot[] = [
-  { t: 0.16, side: "left", length: 30, appearAt: 0.01 },
-  { t: 0.21, side: "right", length: 30, appearAt: 0.03 },
-  { t: 0.45, side: "left", length: 56, appearAt: 0.18 },
-  { t: 0.53, side: "right", length: 60, appearAt: 0.25 },
-  { t: 0.74, side: "left", length: 70, appearAt: 0.42 },
-  { t: 0.82, side: "right", length: 74, appearAt: 0.5 },
+  { t: 0.12, side: "left", length: 44, appearAt: 0.01, splay: 64, droop: 0.55 },
+  { t: 0.19, side: "right", length: 40, appearAt: 0.03, splay: 56, droop: 0.5 },
+  { t: 0.3, side: "left", length: 72, appearAt: 0.1, splay: 68, droop: 0.74 },
+  { t: 0.39, side: "right", length: 84, appearAt: 0.16, splay: 66, droop: 0.74 },
+  { t: 0.49, side: "left", length: 92, appearAt: 0.24, splay: 60, droop: 0.68 },
+  { t: 0.58, side: "right", length: 96, appearAt: 0.31, splay: 56, droop: 0.62 },
+  { t: 0.67, side: "left", length: 96, appearAt: 0.38, splay: 50, droop: 0.52 },
+  { t: 0.76, side: "right", length: 92, appearAt: 0.45, splay: 46, droop: 0.44 },
+  { t: 0.86, side: "left", length: 62, appearAt: 0.54, splay: 34, droop: 0.22 },
+  { t: 0.92, side: "right", length: 48, appearAt: 0.6, splay: 28, droop: 0.15 },
 ];
 
 function stemHeightForGrowth(growth: number): number {
@@ -81,6 +92,9 @@ export function Plant({
   const stemPath = `M${p0.x},${p0.y} C${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`;
   const tipAngle = cubicBezierTangentAngle(p0, p1, p2, p3, 1);
   const budSwell = localProgress(growth, 0.75, 1);
+  /** Stems start thin and sturdy up as the plant matures. */
+  const baseWidth = growth > 0.15 ? 11 : 5.5;
+  const tipWidth = growth > 0.15 ? 4.6 : 2.8;
 
   useEffect(() => {
     if (tapPulse === 0) return;
@@ -110,7 +124,7 @@ export function Plant({
     <svg
       viewBox="0 0 400 630"
       className="plant-illustration"
-      role="img"
+      role="group"
       aria-label={
         isBloomed
           ? "A fully bloomed pink lily rising from a white vase"
@@ -148,6 +162,10 @@ export function Plant({
           <stop offset="70%" stopColor="var(--petal-mid)" />
           <stop offset="100%" stopColor="var(--petal-center)" />
         </radialGradient>
+        <linearGradient id="petalThroatGradient" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stopColor="#c5d27a" stopOpacity={0.85} />
+          <stop offset="100%" stopColor="#e9e39a" stopOpacity={0} />
+        </linearGradient>
         <radialGradient id="petalGradientInner" cx="50%" cy="97%" r="110%">
           <stop offset="0%" stopColor="var(--petal-shade)" />
           <stop offset="45%" stopColor="var(--petal-inner-outer)" />
@@ -158,7 +176,7 @@ export function Plant({
       <motion.g
         animate={controls}
         style={{ transformOrigin: `${CX}px ${BASE_Y}px`, cursor: onTap ? "pointer" : undefined }}
-        onClick={onTap}
+        onClick={onTap ? (event) => onTap({ x: event.clientX, y: event.clientY }) : undefined}
         tabIndex={onTap ? 0 : undefined}
         role={onTap ? "button" : undefined}
         aria-label={onTap ? "Tap the lily" : undefined}
@@ -175,15 +193,20 @@ export function Plant({
       >
         <Vase rimY={BASE_Y} />
 
+        <g className={reducedMotion ? undefined : "plant-breeze"}>
         {growth > 0 && (
-          <path
-            d={stemPath}
-            fill="none"
-            stroke="url(#stemGradient)"
-            strokeWidth={growth > 0.15 ? 7 : 4}
-            strokeLinecap="round"
-          />
+          <>
+            <ellipse cx={CX} cy={BASE_Y + 1} rx={baseWidth * 1.2} ry={2.6} fill="var(--vase-contact-shadow)" opacity={0.4} />
+            <path d={taperedStemPath(p0, p1, p2, p3, baseWidth, tipWidth, 28, 9)} fill="url(#stemGradient)" stroke="var(--stem-shade)" strokeWidth={0.5} strokeLinejoin="round" />
+            <path d={stemPath} fill="none" stroke="var(--leaf-highlight)" strokeWidth={1.1} strokeLinecap="round" opacity={0.28} transform="translate(-1.2, 0)" />
+          </>
         )}
+
+        {growth > 0 &&
+          LEAF_SLOTS.filter((slot) => growth >= slot.appearAt).map((slot, index) => {
+            const node = cubicBezierPoint(p0, p1, p2, p3, slot.t);
+            return <ellipse key={`node-${index}`} cx={node.x} cy={node.y} rx={baseWidth * 0.46} ry={1.5} fill="var(--stem-shade)" opacity={0.45} />;
+          })}
 
         {LEAF_SLOTS.map((slot, index) => {
           const point = cubicBezierPoint(p0, p1, p2, p3, slot.t);
@@ -196,6 +219,8 @@ export function Plant({
               stemAngle={angle}
               side={slot.side}
               length={slot.length}
+              splay={slot.splay}
+              droop={slot.droop}
               growth={localGrowth}
               reducedMotion={reducedMotion}
               swayDelay={index * 0.35}
@@ -213,6 +238,8 @@ export function Plant({
         ) : (
           <Bud tip={p3} angle={tipAngle} swell={budSwell} reducedMotion={reducedMotion} />
         )}
+        </g>
+        <VaseLip rimY={BASE_Y} />
       </motion.g>
     </svg>
   );

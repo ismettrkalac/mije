@@ -51,7 +51,7 @@ function shell(bodyHtml: string): string {
 }
 
 function button(siteUrl: string, label: string): string {
-  return `<a href="${siteUrl}" style="display:inline-block;margin-top:28px;padding:12px 28px;background:#d68fa3;color:#ffffff;text-decoration:none;border-radius:999px;font-family:Georgia,'Times New Roman',serif;font-size:15px;">${label}</a>`;
+  return `<a href="${escapeHtml(siteUrl)}" style="display:inline-block;margin-top:28px;padding:12px 28px;background:#d68fa3;color:#ffffff;text-decoration:none;border-radius:999px;font-family:Georgia,'Times New Roman',serif;font-size:15px;">${label}</a>`;
 }
 
 export function renderMonthlyEmail(

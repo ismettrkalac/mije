@@ -33,12 +33,15 @@
   --petal-shade: #9c5068;
   --petal-vein: #c17c8f;
   --petal-speckle: #8a3752;
+  --petal-edge: #b4506d;
 
   --stamen-filament: #c98a4f;
   --stamen-anther: #93502a;
   --flower-throat: #e8a8ab;
 
+  --can-light: #e8946a;
   --can-body: #c96b3f;
+  --can-dark: #96482a;
   --can-handle: #a8542c;
   --droplet-color: #8fd0e8;
 

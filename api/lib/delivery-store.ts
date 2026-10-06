@@ -7,8 +7,8 @@
  * idempotency-key concept), which is safe because a single Vercel Cron job
  * never runs two invocations concurrently.
  *
- * Every write is a real commit to the repo (via GITHUB_BRANCH, default
- * `main`) — a side effect worth knowing about: since Vercel auto-deploys
+ * Every write is a real commit to the repo (via GITHUB_DATA_BRANCH,
+ * default `main`) — a side effect worth knowing about: since Vercel auto-deploys
  * on push, each month's delivery record also triggers a tiny redeploy of
  * the site.
  */
@@ -92,10 +92,14 @@ async function writeDeliveryFile(config: GitHubConfig, data: DeliveryFile, sha: 
   }
 }
 
-export async function getDelivery(recipientId: string, monthKey: string): Promise<DeliveryRecord | null> {
-  const config = getConfig();
-  const { data } = await readDeliveryFile(config);
-  return data[deliveryStoreKey(recipientId, monthKey)] ?? null;
+/** Loads every delivery record in one GitHub read, keyed by `deliveryKey(recipientId, monthKey)`. */
+export async function getDeliveries(): Promise<Record<string, DeliveryRecord>> {
+  const { data } = await readDeliveryFile(getConfig());
+  return data;
+}
+
+export function deliveryKey(recipientId: string, monthKey: string): string {
+  return deliveryStoreKey(recipientId, monthKey);
 }
 
 export async function markDelivered(recipientId: string, monthKey: string, messageId: string): Promise<void> {

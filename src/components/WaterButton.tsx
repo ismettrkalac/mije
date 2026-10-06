@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
+import { WateringCanIcon } from "./WateringCanIcon";
 
 interface WaterButtonProps {
   wateredToday: boolean;
@@ -16,17 +17,25 @@ const MESSAGES = [
 
 export function WaterButton({ wateredToday, reducedMotion, onWater }: WaterButtonProps) {
   const [messageIndex, setMessageIndex] = useState<number | null>(null);
+  const [rippleKey, setRippleKey] = useState(0);
+  const [pouring, setPouring] = useState(false);
+  const pourTimeoutRef = useRef<number | undefined>(undefined);
   const clickCountRef = useRef(0);
   const timeoutRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     return () => {
       if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
+      if (pourTimeoutRef.current) window.clearTimeout(pourTimeoutRef.current);
     };
   }, []);
 
   const handleClick = () => {
     onWater();
+    setRippleKey((key) => key + 1);
+    setPouring(true);
+    if (pourTimeoutRef.current) window.clearTimeout(pourTimeoutRef.current);
+    pourTimeoutRef.current = window.setTimeout(() => setPouring(false), 1400);
     const nextIndex = clickCountRef.current % MESSAGES.length;
     clickCountRef.current += 1;
     setMessageIndex(nextIndex);
@@ -41,16 +50,28 @@ export function WaterButton({ wateredToday, reducedMotion, onWater }: WaterButto
     <div className="water-control">
       <motion.button
         type="button"
-        className="water-button"
+        className={`water-button${wateredToday ? " water-button--done" : ""}`}
         onClick={handleClick}
+        whileHover={reducedMotion ? undefined : { y: -2 }}
         whileTap={reducedMotion ? undefined : { scale: 0.94 }}
       >
-        <svg viewBox="0 0 40 32" width="22" height="18" aria-hidden="true">
-          <rect x="2" y="12" width="20" height="16" rx="5" fill="currentColor" />
-          <rect x="6" y="4" width="10" height="9" rx="3" fill="currentColor" />
-          <path d="M20,16 C28,14 34,18 36,26" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" fill="none" />
-        </svg>
-        <span>Water me</span>
+        {rippleKey > 0 && !reducedMotion && <span key={`ripple-${rippleKey}`} className="water-ripple" aria-hidden="true" />}
+        <motion.span
+          className="water-icon"
+          key={`icon-${rippleKey}`}
+          initial={{ rotate: 0 }}
+          animate={reducedMotion || rippleKey === 0 ? { rotate: 0 } : { rotate: [0, -24, -24, 0] }}
+          transition={{ duration: 1.1, times: [0, 0.25, 0.75, 1], ease: "easeInOut" }}
+        >
+          <WateringCanIcon pouring={pouring && !reducedMotion} />
+        </motion.span>
+        <span>{wateredToday ? "Water again" : "Water me"}</span>
+        {wateredToday && (
+          <svg className="water-check" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+            <circle cx="8" cy="8" r="8" fill="#fff" opacity="0.9" />
+            <path d="M4.5 8.4 7 10.8 11.5 5.6" stroke="#5a8a4f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+        )}
       </motion.button>
       <p className="water-feedback" role="status" aria-live="polite">
         {statusText || " "}

@@ -14,7 +14,7 @@ export interface AnniversaryStatus {
   todayStr: string;
   /** Whole months between the relationship start date and today. */
   monthsCompleted: number;
-  /** True when today's day-of-month matches the relationship start date's day-of-month. */
+  /** True when today is the start date's day-of-month (or the month's last day, if it is shorter). */
   isAnniversaryDay: boolean;
   /** True when today is exactly the bloom date. */
   isBloomDay: boolean;
@@ -33,6 +33,11 @@ function splitDateStr(dateStr: string): { year: number; month: number; day: numb
   return { year: Number(y), month: Number(m), day: Number(d) };
 }
 
+/** Number of days in a 1-based `month` of `year`. */
+export function daysInMonth(year: number, month: number): number {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
 export function computeAnniversaryStatus(
   startDate: string,
   bloomDate: string,
@@ -43,7 +48,8 @@ export function computeAnniversaryStatus(
   const today = splitDateStr(todayStr);
   const start = splitDateStr(startDate);
 
-  const isAnniversaryDay = today.day === start.day;
+  // A start day of 29-31 falls on the last day of shorter months (e.g. the 31st -> Feb 28/29).
+  const isAnniversaryDay = today.day === Math.min(start.day, daysInMonth(today.year, today.month));
   const monthsCompleted = (today.year - start.year) * 12 + (today.month - start.month);
   const daysUntilBloom = calendarDaysBetween(todayStr, bloomDate);
   const isBloomDay = todayStr === bloomDate;
