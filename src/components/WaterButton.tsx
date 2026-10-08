@@ -74,7 +74,7 @@ export function WaterButton({ wateredToday, reducedMotion, onWater }: WaterButto
         )}
       </motion.button>
       <p className="water-feedback" role="status" aria-live="polite">
-        {statusText || " "}
+        {statusText}
       </p>
     </div>
   );

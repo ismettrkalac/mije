@@ -51,7 +51,7 @@ Change the dates, names, and letter text here — nothing else in the codebase n
 The room backdrop is a single image at [`public/background.webp`](public/background.webp) — a photo of a living room. The vase and plant are drawn in SVG on top of it (they don't depend on anything in the photo), so any background works. To swap in a different photo:
 
 1. Replace `public/background.webp` with your own image (same filename, or update the path in `src/App.css` → `.room-photo`). Convert to WebP with `cwebp -q 82 your-photo.png -o public/background.webp` — it is ~30× smaller than the PNG.
-2. The plant is placed by the `.garden-stage` rule in `src/App.css` (about 39vh from the top, pulled up automatically when the screen is short so the vase never sits under the buttons). Adjust `top` there if you want it higher or lower on your photo — the dev date-preview panel (see below) is the fastest way to check different growth stages.
+2. The photo is bottom-aligned and `cover`-fitted, and the plant is positioned so the vase stands on the table edge, which is assumed to be ~82.5% of the way down the image (`--table-y` in `src/App.css`). If your photo's table/surface is elsewhere, change the `0.175` (the distance from the image bottom, as a fraction of image size) in that formula. The dev date-preview panel (see below) is the fastest way to check different growth stages.
 
 > The bundled `background.webp` is a photo the recipient/user supplied for their own private, non-commercial gift page. If you intend to publish this site somewhere public, make sure you have the rights to use whatever background photo you put in its place.
 

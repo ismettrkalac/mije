@@ -35,7 +35,7 @@
   background-color: var(--room-fallback);
   background-image: url("/background.webp");
   background-size: cover;
-  background-position: center center;
+  background-position: center bottom; /* keep the table (bottom of the photo) in view on wide screens */
 }
 
 .room-scrim {
@@ -109,22 +109,24 @@
   font-style: italic;
 }
 
-/* The photo is square and `cover`-fitted, so its table edge (~82.5% down the image) lands at
-   0.325 * max(width, height) + 50% of the height on screen. The plant SVG is 400x630 (stage height
-   = 1.575 x width) and its vase foot is at the bottom, so the stage is lifted to put the foot on
-   that line. On very wide screens the line would fall under the Water button, so it is capped.
-   Percentages resolve against .garden-content, which is pinned to the visible viewport, so this
-   needs no `dvh` units (unsupported before Chrome 108, e.g. older Huawei/EMUI browsers). */
+/* The photo is square, `cover`-fitted and bottom-aligned, so its table edge (~82.5% down the image,
+   i.e. 17.5% of the image size up from the bottom) sits at:
+     --table-y = containerHeight - 0.175 * max(viewportWidth, containerHeight)
+   The plant SVG is 400x630 (stage height = 1.575 x width) and its vase foot is at the bottom, so the
+   stage is lifted to put the foot on that line. Percentages resolve against .garden-content, which is
+   pinned to the visible viewport, so this needs no `dvh` units (unsupported before Chrome 108, e.g.
+   older Huawei/EMUI browsers). The stage grows a little on big screens and shrinks on short ones. */
 .app-root {
-  --stage-width: min(56vw, 225px);
+  --stage-width: min(56vw, max(225px, 32vh), 39vh);
   --stage-height: calc(var(--stage-width) * 1.575);
   --footer-reserve: 80px;
+  --table-y: min(calc(100% - max(100vw, 100%) * 0.175), calc(100% - 110px));
 }
 
 .garden-stage {
   position: absolute;
   top: min(
-    calc(min(max(100vw, 100%) * 0.325 + 50%, 100% - 110px) + 12px - var(--stage-height)),
+    calc(var(--table-y) + 12px - var(--stage-height)),
     calc(97% - var(--footer-reserve) - var(--stage-height))
   );
   left: 51%;
@@ -370,11 +372,21 @@
 }
 
 .water-feedback {
-  min-height: 1.3em;
-  font-size: 0.85rem;
-  color: var(--ink-soft);
+  min-height: 1.6em;
   margin: 0;
+  padding: 3px 14px;
+  border-radius: 999px;
+  background: rgba(255, 252, 244, 0.86);
+  box-shadow: 0 2px 8px rgba(61, 47, 34, 0.12);
+  color: var(--ink);
+  font-size: 0.85rem;
   text-align: center;
+}
+
+/* No text, no pill: the line keeps its height so the layout doesn't jump when a message appears. */
+.water-feedback:empty {
+  background: none;
+  box-shadow: none;
 }
 
 .letter-backdrop {
